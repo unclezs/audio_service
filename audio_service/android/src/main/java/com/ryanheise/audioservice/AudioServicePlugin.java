@@ -954,7 +954,18 @@ public class AudioServicePlugin implements FlutterPlugin, ActivityAware {
                     // media buttons to us.
                     // See: https://issuetracker.google.com/issues/65344811
                     if (silenceAudioTrack == null) {
+                        // FIXED: Create proper silence data for 8-bit PCM
+                        // For 8-bit PCM, the center value (silence) is 128, not 0
                         byte[] silence = new byte[2048];
+                        // Fill with 128 (the actual silence value for 8-bit unsigned PCM)
+                        for (int i = 0; i < silence.length; i++) {
+                            silence[i] = (byte) 128;
+                        }
+
+                        // Alternative: Use 16-bit PCM which uses 0 for silence
+                        // This would require changing ENCODING_PCM_8BIT to ENCODING_PCM_16BIT
+                        // and doubling the buffer size
+
                         // TODO: Uncomment this after moving to a minSdkVersion of 21.
                         /* AudioAttributes audioAttributes = new AudioAttributes.Builder() */
                         /*     .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC) */
