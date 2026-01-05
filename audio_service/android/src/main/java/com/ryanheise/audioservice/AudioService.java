@@ -112,7 +112,10 @@ public class AudioService extends MediaBrowserServiceCompat {
 
     public static int toKeyCode(long action) {
         if (action == PlaybackStateCompat.ACTION_PLAY) {
-            return KEYCODE_BYPASS_PLAY;
+            // Use standard keycode for PLAY action to fix compatibility issues
+            // on some OEM devices (e.g., OnePlus with Oxygen OS) where the
+            // custom KEYCODE_BYPASS_PLAY (KEYCODE_MUTE) may not be handled properly.
+            return PlaybackStateCompat.toKeyCode(action);
         } else if (action == PlaybackStateCompat.ACTION_PAUSE) {
             return KEYCODE_BYPASS_PAUSE;
         } else {
@@ -919,24 +922,35 @@ public class AudioService extends MediaBrowserServiceCompat {
         @Override
         public void onPlay() {
             if (listener == null) return;
+            // Ensure mediaSession is active to fix issues on some OEM devices
+            // (e.g., OnePlus with Oxygen OS) where the session may become inactive
+            // after pausing on the lock screen.
+            if (!mediaSession.isActive())
+                mediaSession.setActive(true);
             listener.onPlay();
         }
 
         @Override
         public void onPlayFromMediaId(final String mediaId, final Bundle extras) {
             if (listener == null) return;
+            if (!mediaSession.isActive())
+                mediaSession.setActive(true);
             listener.onPlayFromMediaId(mediaId, extras);
         }
 
         @Override
         public void onPlayFromSearch(final String query, final Bundle extras) {
             if (listener == null) return;
+            if (!mediaSession.isActive())
+                mediaSession.setActive(true);
             listener.onPlayFromSearch(query, extras);
         }
 
         @Override
         public void onPlayFromUri(final Uri uri, final Bundle extras) {
             if (listener == null) return;
+            if (!mediaSession.isActive())
+                mediaSession.setActive(true);
             listener.onPlayFromUri(uri, extras);
         }
 
@@ -947,6 +961,11 @@ public class AudioService extends MediaBrowserServiceCompat {
             @SuppressWarnings("deprecation")
             final KeyEvent event = (KeyEvent)mediaButtonEvent.getExtras().getParcelable(Intent.EXTRA_KEY_EVENT);
             if (event.getAction() == KeyEvent.ACTION_DOWN) {
+                // Ensure mediaSession is active before handling media button events.
+                // This fixes issues on some OEM devices (e.g., OnePlus with Oxygen OS)
+                // where the session may become inactive after pausing on the lock screen.
+                if (!mediaSession.isActive())
+                    mediaSession.setActive(true);
                 switch (event.getKeyCode()) {
                 case KEYCODE_BYPASS_PLAY:
                     onPlay();
